@@ -24,7 +24,41 @@ static const char KEY_LEFT[] = "\033[D";
 static const char KEY_SAVE[] = "\033[s";
 static const char KEY_LOAD[] = "\033[u";
 
-ms_t ms;
+ms_t ms = {
+    .history.index = MS_MAX_HISTORY_NUM,
+    .sys_file.root_dir.name = "/",
+    .sys_file.root_dir.father = NULL,
+    .sys_file.root_dir.mode = MS_MODE_DIR,
+    .sys_file.root_dir.data.as_dir.list =
+        {
+            .next = &ms.sys_file.root_dir.data.as_dir.list,
+            .prev = &ms.sys_file.root_dir.data.as_dir.list,
+        },
+    .sys_file.bin_dir.name = "bin",
+    .sys_file.bin_dir.father = &ms.sys_file.root_dir,
+    .sys_file.bin_dir.mode = MS_MODE_DIR,
+    .sys_file.bin_dir.data.as_dir.list =
+        {
+            .next = &ms.sys_file.bin_dir.data.as_dir.list,
+            .prev = &ms.sys_file.bin_dir.data.as_dir.list,
+        },
+    .sys_file.dev_dir.name = "dev",
+    .sys_file.dev_dir.father = &ms.sys_file.root_dir,
+    .sys_file.dev_dir.mode = MS_MODE_DIR,
+    .sys_file.dev_dir.data.as_dir.list =
+        {
+            .next = &ms.sys_file.dev_dir.data.as_dir.list,
+            .prev = &ms.sys_file.dev_dir.data.as_dir.list,
+        },
+    .sys_file.etc_dir.name = "etc",
+    .sys_file.etc_dir.father = &ms.sys_file.root_dir,
+    .sys_file.etc_dir.mode = MS_MODE_DIR,
+    .sys_file.etc_dir.data.as_dir.list =
+        {
+            .next = &ms.sys_file.etc_dir.data.as_dir.list,
+            .prev = &ms.sys_file.etc_dir.data.as_dir.list,
+        },
+};
 
 static void _err_arg_num() {
   ms_printf("ERROR: Invalid number of arguments.");
@@ -204,12 +238,14 @@ static int ls_fun(int argc, char* argv[]) {
     ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
 
     if (item->mode == MS_MODE_DIR) {
-      ms_printf("d--- %s\n", item->name);
+      ms_printf("d--- %s", item->name);
     } else {
-      ms_printf("f%c%c%c %s\n", item->data.as_file.run ? 'x' : '-',
+      ms_printf("f%c%c%c %s", item->data.as_file.run ? 'x' : '-',
                 item->data.as_file.read ? 'r' : '-',
                 item->data.as_file.write ? 'w' : '-', item->name);
     }
+
+    ms_enter();
   }
 
   return 0;
@@ -268,6 +304,7 @@ static int echo_fun(int argc, char* argv[]) {
   if (argc == 2) {
     ms_printf("%s", argv[1]);
     ms_enter();
+    return 0;
   } else if (argc == 4) {
     ms_item_t* item = _path_to_file(argv[3]);
 
@@ -294,6 +331,8 @@ static int clear_fun(int argc, char* argv[]) {
   (void)argv;
 
   ms_clear();
+
+  return 0;
 }
 
 static const char* tty_read_fun() { return ms.buff.read_buff; }
@@ -414,7 +453,7 @@ void ms_show_head() {
             ms.ctrl.cur_dir->name);
 }
 
-static void ms_add_history(const char* history) {
+static void ms_add_history() {
   ms.history.index = MS_MAX_HISTORY_NUM;
   strcpy(ms.buff.history_buff[ms.history.last++ % MS_MAX_HISTORY_NUM],
          ms.buff.read_buff);
@@ -598,6 +637,8 @@ static void _ms_tab(ms_item_t* item, uint16_t counter) {
 }
 
 static void ms_tab(char* cmd) {
+  while (*cmd == '\0') cmd++;
+
   strcpy(ms.buff.prase_buff, cmd);
 
   char* last_str = strrchr(ms.buff.prase_buff, ' ');
@@ -606,6 +647,10 @@ static void ms_tab(char* cmd) {
     last_str = ms.buff.prase_buff;
   } else {
     last_str++;
+  }
+
+  if (*last_str == '\0') {
+    return;
   }
 
   const char* name = _remove_path(last_str);
@@ -682,7 +727,7 @@ void ms_input(char data) {
     ms.ctrl.index += ms.ctrl.offset;
     ms_enter();
     ms.buff.read_buff[ms.ctrl.index] = '\0';
-    ms_add_history(ms.buff.read_buff);
+    ms_add_history();
     ms_prase_cmd(remove_space(ms.buff.read_buff));
     ms_show_head();
     ms_reset();
@@ -697,7 +742,7 @@ void ms_input(char data) {
   } else if (data == 0x7f) {
     ms_delete();
   } else if (data == '\t') {
-    ms_tab(remove_space(ms.buff.read_buff));
+    ms_tab(ms.buff.read_buff);
   } else {
     ms_display_char(data);
   }
@@ -714,18 +759,12 @@ void ms_clear() {
 }
 
 void ms_init(int (*write_fun)(const char*, uint32_t)) {
-  memset(&ms, 0, sizeof(ms));
-
   ms.history.index = MS_MAX_HISTORY_NUM;
 
   ms.write = write_fun;
 
   strcpy(ms.buff.readme_buff, "Mini Shell by jiu-xiao.");
 
-  ms_dir_init(&ms.sys_file.root_dir, "/");
-  ms_dir_init(&ms.sys_file.bin_dir, "bin");
-  ms_dir_init(&ms.sys_file.dev_dir, "dev");
-  ms_dir_init(&ms.sys_file.etc_dir, "etc");
   ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, NULL);
   ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, NULL);
   ms_file_init(&ms.sys_file.cd_cmd, "cd", cd_fun, NULL, NULL);
@@ -735,8 +774,6 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
   ms_file_init(&ms.sys_file.tty_dev, "tty", NULL, tty_write_fun, tty_read_fun);
   ms_file_init(&ms.sys_file.readme_file, "README.txt", NULL, readme_write_fun,
                readme_read_fun);
-
-  ms.sys_file.root_dir.father == NULL;
 
   ms_item_add(&ms.sys_file.bin_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.dev_dir, &ms.sys_file.root_dir);
@@ -756,3 +793,11 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
 
   ms_show_head();
 }
+
+ms_item_t* ms_get_root_dir() { return &ms.sys_file.root_dir; }
+
+ms_item_t* ms_get_etc_dir() { return &ms.sys_file.etc_dir; }
+
+ms_item_t* ms_get_dev_dir() { return &ms.sys_file.dev_dir; }
+
+ms_item_t* ms_get_bin_dir() { return &ms.sys_file.bin_dir; }

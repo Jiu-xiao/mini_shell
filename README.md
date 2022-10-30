@@ -37,3 +37,21 @@
             delay();
         }
     }
+
+## 添加文件/文件夹
+
+    ms_item_t file,dir,cmd; //请确保变量存活
+
+    ms_dir_init(&dir,"dir_name"); //初始化文件夹
+
+    //初始化文件
+    ms_file_init(&file,"file_name",NULL,file_write_fun,file_read_fun);
+
+    //初始化命令
+    ms_file_init(&cmd,"cmd_name",cmd_fun,NULL,NULL);
+
+    ms_item_add(&file,&dir); //添加文件
+    ms_item_add(&file,ms_get_root_dir()); //添加文件夹到根目录
+    ms_cmd_add(&cmd); //添加命令
+
+对于`void ms_file_init(file,name,run_fun,write_fun,read_fun)`来说，文件与命令在底层实现上是一样的，如果命令注册了读写函数可以当作文件读写，同样文件也可以被执行。

@@ -129,6 +129,14 @@ void ms_clear_line();
 
 void ms_show_head();
 
+ms_item_t* ms_get_root_dir();
+
+ms_item_t* ms_get_etc_dir();
+
+ms_item_t* ms_get_dev_dir();
+
+ms_item_t* ms_get_bin_dir();
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,7 +5,7 @@ void ms_list_init_head(ms_list_head_t* list) {
   list->prev = list;
 }
 
-void __list_add(ms_list_head_t* new_data, ms_list_head_t* prev,
+static void __list_add(ms_list_head_t* new_data, ms_list_head_t* prev,
                 ms_list_head_t* next) {
   next->prev = new_data;
   new_data->next = next;
@@ -21,7 +21,7 @@ void ms_list_add_tail(ms_list_head_t* new_data, ms_list_head_t* head) {
   __list_add(new_data, head->prev, head);
 }
 
-void __list_del(ms_list_head_t* prev, ms_list_head_t* next) {
+static void __list_del(ms_list_head_t* prev, ms_list_head_t* next) {
   next->prev = prev;
   prev->next = next;
 }
@@ -30,7 +30,7 @@ void ms_list_del(ms_list_head_t* entry) {
   __list_del(entry->prev, entry->next);
 }
 
-void __list_del_entry(ms_list_head_t* entry) {
+static void __list_del_entry(ms_list_head_t* entry) {
   __list_del(entry->prev, entry->next);
 }
 
