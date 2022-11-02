@@ -30,11 +30,11 @@
     }
 
     int main(){
-        ms_init(show_fun);
+        ms_init(show_fun);        // 初始化时指定打印函数
 
         while(1){
-            ms_input(get_char());
-            delay();
+            ms_input(get_char()); // 每次输入一个字节
+            delay();              // ms_input为非阻塞，请按照一定频率调用。
         }
     }
 
@@ -55,3 +55,21 @@
     ms_cmd_add(&cmd); //添加命令
 
 对于`void ms_file_init(file,name,run_fun,write_fun,read_fun)`来说，文件与命令在底层实现上是一样的，如果命令注册了读写函数可以当作文件读写，同样文件也可以被执行。
+
+## 其他API
+
+    void ms_enter(); //换行
+
+    void ms_clear(); //清屏
+
+    void ms_clear_line(); //清空光标所在行
+
+    void ms_printf(const char* format,...) //格式化打印
+
+    ms_item_t* ms_get_root_dir(); //获取根目录对象指针
+
+    ms_item_t* ms_get_etc_dir(); //获取etc对象指针
+
+    ms_item_t* ms_get_dev_dir(); //获取dev对象指针
+
+    ms_item_t* ms_get_bin_dir(); //获取bin对象指针

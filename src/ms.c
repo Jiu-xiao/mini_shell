@@ -637,7 +637,7 @@ static void _ms_tab(ms_item_t* item, uint16_t counter) {
 }
 
 static void ms_tab(char* cmd) {
-  while (*cmd == '\0') cmd++;
+  while (*cmd == ' ') cmd++;
 
   strcpy(ms.buff.prase_buff, cmd);
 
@@ -647,10 +647,6 @@ static void ms_tab(char* cmd) {
     last_str = ms.buff.prase_buff;
   } else {
     last_str++;
-  }
-
-  if (*last_str == '\0') {
-    return;
   }
 
   const char* name = _remove_path(last_str);
