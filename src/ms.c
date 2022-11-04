@@ -24,41 +24,7 @@ static const char KEY_LEFT[] = "\033[D";
 static const char KEY_SAVE[] = "\033[s";
 static const char KEY_LOAD[] = "\033[u";
 
-ms_t ms = {
-    .history.index = MS_MAX_HISTORY_NUM,
-    .sys_file.root_dir.name = "/",
-    .sys_file.root_dir.father = NULL,
-    .sys_file.root_dir.mode = MS_MODE_DIR,
-    .sys_file.root_dir.data.as_dir.list =
-        {
-            .next = &ms.sys_file.root_dir.data.as_dir.list,
-            .prev = &ms.sys_file.root_dir.data.as_dir.list,
-        },
-    .sys_file.bin_dir.name = "bin",
-    .sys_file.bin_dir.father = &ms.sys_file.root_dir,
-    .sys_file.bin_dir.mode = MS_MODE_DIR,
-    .sys_file.bin_dir.data.as_dir.list =
-        {
-            .next = &ms.sys_file.bin_dir.data.as_dir.list,
-            .prev = &ms.sys_file.bin_dir.data.as_dir.list,
-        },
-    .sys_file.dev_dir.name = "dev",
-    .sys_file.dev_dir.father = &ms.sys_file.root_dir,
-    .sys_file.dev_dir.mode = MS_MODE_DIR,
-    .sys_file.dev_dir.data.as_dir.list =
-        {
-            .next = &ms.sys_file.dev_dir.data.as_dir.list,
-            .prev = &ms.sys_file.dev_dir.data.as_dir.list,
-        },
-    .sys_file.etc_dir.name = "etc",
-    .sys_file.etc_dir.father = &ms.sys_file.root_dir,
-    .sys_file.etc_dir.mode = MS_MODE_DIR,
-    .sys_file.etc_dir.data.as_dir.list =
-        {
-            .next = &ms.sys_file.etc_dir.data.as_dir.list,
-            .prev = &ms.sys_file.etc_dir.data.as_dir.list,
-        },
-};
+ms_t ms;
 
 static void _err_arg_num() {
   ms_printf("ERROR: Invalid number of arguments.");
@@ -760,6 +726,13 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
   ms.write = write_fun;
 
   strcpy(ms.buff.readme_buff, "Mini Shell by jiu-xiao.");
+
+  ms.history.index = MS_MAX_HISTORY_NUM;
+
+  ms_dir_init(&ms.sys_file.root_dir, "/");
+  ms_dir_init(&ms.sys_file.bin_dir, "bin");
+  ms_dir_init(&ms.sys_file.etc_dir, "etc");
+  ms_dir_init(&ms.sys_file.dev_dir, "dev");
 
   ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, NULL);
   ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, NULL);
