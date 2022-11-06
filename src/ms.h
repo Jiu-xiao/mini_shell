@@ -137,6 +137,8 @@ ms_item_t* ms_get_dev_dir();
 
 ms_item_t* ms_get_bin_dir();
 
+void ms_start();
+
 #ifdef __cplusplus
 }
 #endif

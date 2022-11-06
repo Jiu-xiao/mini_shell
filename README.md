@@ -35,7 +35,9 @@
     }
 
     int main(){
-        ms_init(show_fun);        // 初始化时指定打印函数
+        ms_init(show_fun); //初始化并指定打印函数
+
+        ms_start(); //打印开始界面
 
         while(1){
             ms_input(get_char()); // 每次输入一个字节

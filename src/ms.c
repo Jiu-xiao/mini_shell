@@ -757,9 +757,10 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
   ms_item_add(&ms.sys_file.readme_file, &ms.sys_file.root_dir);
 
   ms.ctrl.cur_dir = &ms.sys_file.root_dir;
+}
 
-  write_fun(INIT_MESSAGE, sizeof(INIT_MESSAGE));
-
+void ms_start() {
+  ms.write(INIT_MESSAGE, sizeof(INIT_MESSAGE));
   ms_show_head();
 }
 
