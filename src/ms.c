@@ -760,6 +760,7 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
 }
 
 void ms_start() {
+  ms_clear();
   ms.write(INIT_MESSAGE, sizeof(INIT_MESSAGE));
   ms_show_head();
 }
