@@ -43,10 +43,6 @@ typedef enum {
   MS_MODE_DIR,
 } ms_mode_t;
 
-typedef int (*ms_cmd_fun_t)(int argc, char* argv[]);
-typedef int (*ms_write_fun_t)(const char*);
-typedef const char* (*ms_read_fun_t)();
-
 typedef struct ms_item_struct {
   const char* name;
   struct ms_item_struct* father;
@@ -56,15 +52,19 @@ typedef struct ms_item_struct {
     } as_dir;
 
     struct {
-      ms_cmd_fun_t run;
-      ms_read_fun_t read;
-      ms_write_fun_t write;
+      int (*run)(struct ms_item_struct* self, int argc, char* argv[]);
+      const char* (*read)(struct ms_item_struct* self);
+      int (*write)(struct ms_item_struct* self, const char*);
     } as_file;
   } data;
   ms_list_head_t self;
 
   bool mode;
 } ms_item_t;
+
+typedef int (*ms_cmd_fun_t)(ms_item_t*, int argc, char* argv[]);
+typedef int (*ms_write_fun_t)(ms_item_t*, const char*);
+typedef const char* (*ms_read_fun_t)(ms_item_t*);
 
 typedef struct {
   int (*write)(const char*, uint32_t);

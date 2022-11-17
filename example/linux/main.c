@@ -15,6 +15,8 @@ int main() {
 
   ms_init(show_fun);
 
+  ms_start();
+
   while (1) {
     ms_input(getchar());
   }

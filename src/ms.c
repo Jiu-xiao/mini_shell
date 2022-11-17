@@ -175,9 +175,11 @@ static void _pwd_fun(ms_item_t* item) {
   ms_printf("/%s", item->name);
 }
 
-static int pwd_fun(int argc, char* argv[]) {
+static int pwd_fun(ms_item_t* item, int argc, char* argv[]) {
   MS_UNUSED(argc);
   MS_UNUSED(argv);
+  MS_UNUSED(item);
+
   if (ms.ctrl.cur_dir == &ms.sys_file.root_dir) {
     ms.write("/", 1);
   } else {
@@ -187,7 +189,9 @@ static int pwd_fun(int argc, char* argv[]) {
   return 0;
 }
 
-static int ls_fun(int argc, char* argv[]) {
+static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
+  MS_UNUSED(_item);
+
   ms_item_t* item = NULL;
   if (argc == 1) {
     item = ms.ctrl.cur_dir;
@@ -217,7 +221,9 @@ static int ls_fun(int argc, char* argv[]) {
   return 0;
 }
 
-static int cd_fun(int argc, char* argv[]) {
+static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
+  MS_UNUSED(item);
+
   if (argc == 1) {
     return 0;
   }
@@ -238,7 +244,9 @@ static int cd_fun(int argc, char* argv[]) {
   }
 }
 
-static int cat_fun(int argc, char* argv[]) {
+static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
+  MS_UNUSED(_item);
+
   if (argc != 2) {
     _err_arg_num();
     return -1;
@@ -254,7 +262,7 @@ static int cat_fun(int argc, char* argv[]) {
 
     const char* read_data;
 
-    read_data = item->data.as_file.read();
+    read_data = item->data.as_file.read(item);
     if (read_data) {
       ms_printf("%s", read_data);
     }
@@ -266,7 +274,9 @@ static int cat_fun(int argc, char* argv[]) {
   return -1;
 }
 
-static int echo_fun(int argc, char* argv[]) {
+static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
+  MS_UNUSED(item);
+
   if (argc == 2) {
     ms_printf("%s", argv[1]);
     ms_enter();
@@ -280,7 +290,7 @@ static int echo_fun(int argc, char* argv[]) {
         return -1;
       }
 
-      item->data.as_file.write(argv[1]);
+      item->data.as_file.write(item, argv[1]);
       ms_enter();
       return 0;
     }
@@ -292,26 +302,36 @@ static int echo_fun(int argc, char* argv[]) {
   }
 }
 
-static int clear_fun(int argc, char* argv[]) {
-  (void)argc;
-  (void)argv;
+static int clear_fun(ms_item_t* item, int argc, char* argv[]) {
+  MS_UNUSED(argc);
+  MS_UNUSED(argv);
+  MS_UNUSED(item);
 
   ms_clear();
 
   return 0;
 }
 
-static const char* tty_read_fun() { return ms.buff.read_buff; }
+static const char* tty_read_fun(ms_item_t* item) {
+  MS_UNUSED(item);
+  return ms.buff.read_buff;
+}
 
-static int tty_write_fun(const char* data) {
+static int tty_write_fun(ms_item_t* item, const char* data) {
+  MS_UNUSED(item);
+
   ms_printf("%s", data);
 
   return 0;
 }
 
-static const char* readme_read_fun() { return ms.buff.readme_buff; }
+static const char* readme_read_fun(ms_item_t* item) {
+  MS_UNUSED(item);
+  return ms.buff.readme_buff;
+}
 
-static int readme_write_fun(const char* data) {
+static int readme_write_fun(ms_item_t* item, const char* data) {
+  MS_UNUSED(item);
   strncpy(ms.buff.readme_buff, data, sizeof(ms.buff.readme_buff));
   return 0;
 }
@@ -410,7 +430,7 @@ static void ms_prase_cmd(const char* cmd) {
   ms_item_t* item = ms_search_cmd(ms.buff.prase_buff);
 
   if (item) {
-    item->data.as_file.run(arg_num + 1, ms.buff.arg_map);
+    item->data.as_file.run(item, arg_num + 1, ms.buff.arg_map);
   }
 }
 

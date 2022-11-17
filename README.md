@@ -63,6 +63,14 @@
 
 对于`void ms_file_init(file,name,run_fun,write_fun,read_fun)`来说，文件与命令在底层实现上是一样的，如果命令注册了读写函数可以当作文件读写，同样文件也可以被执行。
 
+## 用户函数
+
+    typedef int (*ms_cmd_fun_t)(ms_item_t*, int argc, char* argv[]);
+    typedef int (*ms_write_fun_t)(ms_item_t*, const char*);
+    typedef const char* (*ms_read_fun_t)(ms_item_t*);
+
+传入的ms_item_t*为对应文件的指针，如果定义在对象或者结构体内，可以用ms_container_of得到容器指针。
+
 ## 其他API
 
     void ms_enter(); //换行
