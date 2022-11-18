@@ -485,7 +485,7 @@ static uint16_t ms_get_prev_history() {
 
   } else if (ms.history.num == MS_MAX_HISTORY_NUM) {
     if (ms.history.index !=
-        (ms.history.last + MS_MAX_HISTORY_NUM - 1 % MS_MAX_HISTORY_NUM)) {
+        ((ms.history.last + MS_MAX_HISTORY_NUM - 1) % MS_MAX_HISTORY_NUM)) {
       return (ms.history.index + 1) % MS_MAX_HISTORY_NUM;
     } else {
       return MS_MAX_HISTORY_NUM;
