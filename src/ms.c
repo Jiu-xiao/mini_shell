@@ -725,6 +725,10 @@ void ms_input(char data) {
     ms_delete();
   } else if (data == '\t') {
     ms_tab(ms.buff.read_buff);
+  } else if (data == 3) {
+    ms_enter();
+    ms_clear_line();
+    ms_show_head();
   } else {
     ms_display_char(data);
   }
