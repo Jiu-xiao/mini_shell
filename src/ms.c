@@ -537,7 +537,7 @@ static void ms_key_right() {
 static void ms_prase_ansi(char data) {
   switch (ms.ctrl.ansi) {
     case 1:
-      if (isprint(data)) {
+      if (isprint((unsigned char)data)) {
         ms.ctrl.ansi++;
         break;
       }
