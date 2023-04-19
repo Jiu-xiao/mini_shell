@@ -18,3 +18,9 @@
 
 /* 用户名称 */
 #define MS_USER_NAME "jiu-xiao"
+
+/* 欢迎信息 */
+#define MS_HELLO_MESSAGE "Welcome to use Mini Shell!"
+
+/* 登陆命令 */
+#define MS_INIT_COMMAND ""
