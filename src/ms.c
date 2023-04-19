@@ -749,7 +749,8 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
 
   ms.write = write_fun;
 
-  strcpy(ms.buff.readme_buff, "Mini Shell by jiu-xiao.");
+  strcpy(ms.buff.readme_buff,
+         "Mini Shell by jiu-xiao. https://github.com/Jiu-xiao/mini_shell");
 
   ms.history.index = MS_MAX_HISTORY_NUM;
 

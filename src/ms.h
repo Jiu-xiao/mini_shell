@@ -74,7 +74,7 @@ typedef struct {
     char prase_buff[MS_MAX_CMD_LENGTH];
     char* arg_map[MS_MAX_ARG_NUM];
     char history_buff[MS_MAX_HISTORY_NUM][MS_MAX_CMD_LENGTH];
-    char readme_buff[32];
+    char readme_buff[60];
   } buff;
 
   struct {
