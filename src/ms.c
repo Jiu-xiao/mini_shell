@@ -605,15 +605,26 @@ static void ms_display_char(char data) {
 
 static ms_item_t* tab_tmp;
 
+static uint16_t tab_same_len = 0;
+
 static void _ms_tab(ms_item_t* item, uint16_t counter) {
   if (counter == 1) {
     tab_tmp = item;
+    tab_same_len = 0;
     return;
   }
 
   if (counter == 2) {
     ms_enter();
     ms_printf("%s", tab_tmp->name);
+    tab_same_len = strlen(tab_tmp->name) - 1;
+  }
+
+  for (uint16_t i = 0; i <= tab_same_len; i++) {
+    if (tab_tmp->name[i] != item->name[i] || item->name[i] == '\0') {
+      tab_same_len = i;
+      tab_tmp = item;
+    }
   }
 
   ms_enter();
@@ -695,10 +706,17 @@ static void ms_tab(char* cmd) {
       name++;
     }
     return;
-  } else {
+  } else if (tab_same_len == 0) {
     ms_enter();
     ms_show_head();
     ms_printf("%s", ms.buff.read_buff);
+  } else {
+    ms_reset();
+    ms_enter();
+    ms_show_head();
+    for (uint16_t i = 0; i < tab_same_len; i++) {
+      ms_input(tab_tmp->name[i]);
+    }
   }
 }
 
