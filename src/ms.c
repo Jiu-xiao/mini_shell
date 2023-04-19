@@ -1,6 +1,6 @@
 #include "ms.h"
 
-#define SHELL_VERSION "1.0.0"
+#define SHELL_VERSION "1.0.2"
 
 static const char INIT_MESSAGE[] =
     " __  __ _       _    _____ _          _ _ \r\n"
@@ -12,9 +12,7 @@ static const char INIT_MESSAGE[] =
     "Build:"__DATE__
     " "__TIME__
     "\r\n"
-    "Mini shell version:" SHELL_VERSION
-    "\r\n"
-    "by jiu-xiao.\r\n";
+    "Mini shell version:" SHELL_VERSION "\r\n";
 
 static const char CLEAR_ALL[] = "\033[2J\033[1H";
 static const char CLEAR_LINE[] = "\033[2K\r";
@@ -787,7 +785,15 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
 void ms_start() {
   ms_clear();
   ms.write(INIT_MESSAGE, sizeof(INIT_MESSAGE));
-  ms_show_head();
+  ms_enter();
+  ms.write(MS_HELLO_MESSAGE, sizeof(MS_HELLO_MESSAGE));
+  ms_enter();
+  if (sizeof(MS_INIT_COMMAND) > 1) {
+    strncpy(ms.buff.read_buff, MS_INIT_COMMAND, sizeof(MS_INIT_COMMAND));
+    ms.ctrl.index = sizeof(MS_INIT_COMMAND);
+  }
+
+  ms_input('\n');
 }
 
 ms_item_t* ms_get_root_dir() { return &ms.sys_file.root_dir; }
