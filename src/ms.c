@@ -603,27 +603,23 @@ static void ms_display_char(char data) {
   }
 }
 
-static ms_item_t* tab_tmp;
-
-static uint16_t tab_same_len = 0;
-
 static void _ms_tab(ms_item_t* item, uint16_t counter) {
   if (counter == 1) {
-    tab_tmp = item;
-    tab_same_len = 0;
+    ms.ctrl.tab_tmp = item;
+    ms.ctrl.tab_same_len = 0;
     return;
   }
 
   if (counter == 2) {
     ms_enter();
-    ms_printf("%s", tab_tmp->name);
-    tab_same_len = strlen(tab_tmp->name) - 1;
+    ms_printf("%s", ms.ctrl.tab_tmp->name);
+    ms.ctrl.tab_same_len = strlen(ms.ctrl.tab_tmp->name) - 1;
   }
 
-  for (uint16_t i = 0; i <= tab_same_len; i++) {
-    if (tab_tmp->name[i] != item->name[i] || item->name[i] == '\0') {
-      tab_same_len = i;
-      tab_tmp = item;
+  for (uint16_t i = 0; i <= ms.ctrl.tab_same_len; i++) {
+    if (ms.ctrl.tab_tmp->name[i] != item->name[i] || item->name[i] == '\0') {
+      ms.ctrl.tab_same_len = i;
+      ms.ctrl.tab_tmp = item;
     }
   }
 
@@ -695,18 +691,19 @@ static void ms_tab(char* cmd) {
   if (counter == 0) {
     return;
   } else if (counter == 1) {
-    if (tab_tmp->name[name_len] == '\0' && tab_tmp->mode == MS_MODE_DIR) {
+    if (ms.ctrl.tab_tmp->name[name_len] == '\0' &&
+        ms.ctrl.tab_tmp->mode == MS_MODE_DIR) {
       ms_display_char('/');
       return;
     }
 
-    name = tab_tmp->name + name_len;
+    name = ms.ctrl.tab_tmp->name + name_len;
     while (*name) {
       ms_display_char(*name);
       name++;
     }
     return;
-  } else if (tab_same_len == 0) {
+  } else if (ms.ctrl.tab_same_len == 0) {
     ms_enter();
     ms_show_head();
     ms_printf("%s", ms.buff.read_buff);
@@ -714,8 +711,8 @@ static void ms_tab(char* cmd) {
     ms_reset();
     ms_enter();
     ms_show_head();
-    for (uint16_t i = 0; i < tab_same_len; i++) {
-      ms_input(tab_tmp->name[i]);
+    for (uint16_t i = 0; i < ms.ctrl.tab_same_len; i++) {
+      ms_input(ms.ctrl.tab_tmp->name[i]);
     }
   }
 }

@@ -103,6 +103,8 @@ typedef struct {
     uint32_t offset;
     uint8_t ansi;
     ms_item_t* cur_dir;
+    ms_item_t* tab_tmp;
+    uint16_t tab_same_len;
   } ctrl;
 } ms_t;
 
