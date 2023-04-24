@@ -802,7 +802,15 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
 
 void ms_start() {
   ms_clear();
-  ms.write(INIT_MESSAGE, sizeof(INIT_MESSAGE));
+  const char* index = INIT_MESSAGE;
+  for (uint32_t i = 0; i < sizeof(INIT_MESSAGE); i += 64) {
+    if (sizeof(INIT_MESSAGE) - i > 64) {
+      ms.write(index, 64);
+      index += 64;
+    } else {
+      ms_printf("%s", index);
+    }
+  }
   ms_enter();
   ms.write(MS_HELLO_MESSAGE, sizeof(MS_HELLO_MESSAGE));
   ms_enter();
