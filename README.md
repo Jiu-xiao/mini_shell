@@ -66,8 +66,8 @@
 ## 用户函数
 
     typedef int (*ms_cmd_fun_t)(ms_item_t*, int argc, char* argv[]);
-    typedef int (*ms_write_fun_t)(ms_item_t*, const char*);
-    typedef const char* (*ms_read_fun_t)(ms_item_t*);
+    typedef int (*ms_write_fun_t)(ms_item_t* self, const void* buf, size_t count);
+    typedef int (*ms_read_fun_t)(ms_item_t* self, void* buf, size_t count);
 
 传入的ms_item_t*为对应文件的指针，如果定义在对象或者结构体内，可以用ms_container_of得到容器指针。
 
@@ -88,3 +88,9 @@
     ms_item_t* ms_get_dev_dir(); //获取dev对象指针
 
     ms_item_t* ms_get_bin_dir(); //获取bin对象指针
+
+    //解析目录路径，成功返回MS_OK(0)，并写入到ans
+    ms_status_t ms_path_to_file(const char* path, ms_item_t** ans);
+
+    //解析文件路径，成功返回MS_OK(0)，并写入到ans
+    ms_status_t ms_path_to_dir(const char* raw_path, ms_item_t** ans);

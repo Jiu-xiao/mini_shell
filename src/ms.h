@@ -43,6 +43,14 @@ typedef enum {
   MS_MODE_DIR,
 } ms_mode_t;
 
+typedef enum {
+  MS_OK = 0,
+  MS_ERROR,
+  MS_ERROR_NULL,
+  MS_ERROR_INIT,
+  MS_ERROR_BUSY
+} ms_status_t;
+
 typedef struct ms_item_struct {
   const char* name;
   struct ms_item_struct* father;
@@ -52,9 +60,10 @@ typedef struct ms_item_struct {
     } as_dir;
 
     struct {
+      uint8_t mode;
       int (*run)(struct ms_item_struct* self, int argc, char* argv[]);
-      const char* (*read)(struct ms_item_struct* self);
-      int (*write)(struct ms_item_struct* self, const char*);
+      int (*read)(struct ms_item_struct* self, void* buf, size_t count);
+      int (*write)(struct ms_item_struct* self, const void* buf, size_t count);
     } as_file;
   } data;
   ms_list_head_t self;
@@ -63,8 +72,10 @@ typedef struct ms_item_struct {
 } ms_item_t;
 
 typedef int (*ms_cmd_fun_t)(ms_item_t*, int argc, char* argv[]);
-typedef int (*ms_write_fun_t)(ms_item_t*, const char*);
-typedef const char* (*ms_read_fun_t)(ms_item_t*);
+typedef int (*ms_write_fun_t)(struct ms_item_struct* self, const void* buf,
+                              size_t count);
+typedef int (*ms_read_fun_t)(struct ms_item_struct* self, void* buf,
+                             size_t count);
 
 typedef struct {
   int (*write)(const char*, uint32_t);
@@ -72,9 +83,11 @@ typedef struct {
     char write_buff[MS_WIRITE_BUFF_SIZE];
     char read_buff[MS_MAX_CMD_LENGTH];
     char prase_buff[MS_MAX_CMD_LENGTH];
+    char path_prase_buff[MS_MAX_CMD_LENGTH];
     char* arg_map[MS_MAX_ARG_NUM];
     char history_buff[MS_MAX_HISTORY_NUM][MS_MAX_CMD_LENGTH];
-    char readme_buff[60];
+    char readme_buff[65];
+    char cat_buff[MS_CAT_BUFF_SIZE];
   } buff;
 
   struct {
@@ -140,6 +153,10 @@ ms_item_t* ms_get_dev_dir();
 ms_item_t* ms_get_bin_dir();
 
 void ms_start();
+
+ms_status_t ms_path_to_file(const char* path, ms_item_t** ans);
+
+ms_status_t ms_path_to_dir(const char* raw_path, ms_item_t** ans);
 
 #ifdef __cplusplus
 }
