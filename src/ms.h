@@ -41,6 +41,7 @@ extern "C" {
 typedef enum {
   MS_MODE_FILE,
   MS_MODE_DIR,
+  MS_MODE_DEV,
 } ms_mode_t;
 
 typedef enum {
@@ -60,15 +61,20 @@ typedef struct ms_item_struct {
     } as_dir;
 
     struct {
-      uint8_t mode;
+      void* data;
+      size_t size;
+      bool writeable;
       int (*run)(struct ms_item_struct* self, int argc, char* argv[]);
-      int (*read)(struct ms_item_struct* self, void* buf, size_t count);
-      int (*write)(struct ms_item_struct* self, const void* buf, size_t count);
     } as_file;
+
+    struct {
+      int (*read)(struct ms_item_struct* self, void* buff, size_t size);
+      int (*write)(struct ms_item_struct* self, const void* buff, size_t size);
+    } as_device;
   } data;
   ms_list_head_t self;
 
-  bool mode;
+  ms_mode_t mode;
 } ms_item_t;
 
 typedef int (*ms_cmd_fun_t)(ms_item_t*, int argc, char* argv[]);
@@ -78,7 +84,7 @@ typedef int (*ms_read_fun_t)(struct ms_item_struct* self, void* buf,
                              size_t count);
 
 typedef struct {
-  int (*write)(const char*, uint32_t);
+  int (*write)(const char*, size_t);
   struct {
     char write_buff[MS_WIRITE_BUFF_SIZE];
     char read_buff[MS_MAX_CMD_LENGTH];
@@ -101,6 +107,8 @@ typedef struct {
     ms_item_t bin_dir;
     ms_item_t dev_dir;
     ms_item_t etc_dir;
+    ms_item_t home_dir;
+    ms_item_t user_home_dir;
     ms_item_t tty_dev;
     ms_item_t readme_file;
     ms_item_t pwd_cmd;
@@ -112,8 +120,8 @@ typedef struct {
   } sys_file;
 
   struct {
-    uint32_t index;
-    uint32_t offset;
+    size_t index;
+    size_t offset;
     uint8_t ansi;
     ms_item_t* cur_dir;
     ms_item_t* tab_tmp;
@@ -123,14 +131,19 @@ typedef struct {
 
 void ms_printf(const char* format, ...);
 
-void ms_init(int (*write_fun)(const char*, uint32_t));
+void ms_printf_insert(const char* format, ...);
+
+void ms_init(int (*write_fun)(const char*, size_t));
 
 void ms_input(char data);
 
 void ms_dir_init(ms_item_t* dir, const char* name);
 
 void ms_file_init(ms_item_t* file, const char* name, ms_cmd_fun_t run_fun,
-                  ms_write_fun_t write_fun, ms_read_fun_t read_fun);
+                  void* data, size_t size, bool writeable);
+
+void ms_dev_init(ms_item_t* file, const char* name, ms_write_fun_t write_fun,
+                 ms_read_fun_t read_fun);
 
 void ms_item_add(ms_item_t* item, ms_item_t* parent_dir);
 
@@ -151,6 +164,10 @@ ms_item_t* ms_get_etc_dir();
 ms_item_t* ms_get_dev_dir();
 
 ms_item_t* ms_get_bin_dir();
+
+ms_item_t* ms_get_home_dir();
+
+ms_item_t* ms_get_userhome_dir();
 
 void ms_start();
 

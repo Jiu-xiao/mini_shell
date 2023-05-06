@@ -40,7 +40,11 @@ static void err_file_read() {
 }
 
 static void err_file_found(const char* name) {
-  ms_printf("ERROR: File '%s' not found.", name);
+  if (*name == '\0') {
+    ms_printf("ERROR: File not found.", name);
+  } else {
+    ms_printf("ERROR: File '%s' not found.", name);
+  }
   ms_enter();
 }
 
@@ -50,7 +54,11 @@ static void err_file_exec() {
 }
 
 static void err_dir_found(const char* name) {
-  ms_printf("ERROR: Directory '%s' not found.", name);
+  if (*name == '\0') {
+    ms_printf("ERROR: Directory not found.", name);
+  } else {
+    ms_printf("ERROR: Directory '%s' not found.", name);
+  }
   ms_enter();
 }
 
@@ -68,7 +76,7 @@ static char* remove_path(char* cmd) {
 }
 
 static ms_item_t* path_to_dir(char* path) {
-  uint32_t dir_name_len = strlen(path);
+  size_t dir_name_len = strlen(path);
   ms_item_t* target = ms.ctrl.cur_dir;
 
   if (dir_name_len == 0) {
@@ -87,9 +95,9 @@ static ms_item_t* path_to_dir(char* path) {
     dir_name_len--;
   }
 
-  uint32_t index = 0;
+  size_t index = 0;
 
-  for (uint32_t i = 0; i < dir_name_len + 1; i++) {
+  for (size_t i = 0; i < dir_name_len + 1; i++) {
     if (path[i] != '/' && path[i] != '\0') {
       continue;
     }
@@ -157,7 +165,7 @@ static ms_item_t* path_to_file(char* raw) {
 
   ms_list_for_each(pos, &search_dir->data.as_dir.list) {
     ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
-    if (item->mode == MS_MODE_FILE && strcmp(cmd_name, item->name) == 0) {
+    if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
       return item;
     }
   }
@@ -165,7 +173,7 @@ static ms_item_t* path_to_file(char* raw) {
   if (search_bin) {
     ms_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
       ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
-      if (item->mode == MS_MODE_FILE && strcmp(cmd_name, item->name) == 0) {
+      if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
         return item;
       }
     }
@@ -219,12 +227,29 @@ static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
   ms_list_for_each(pos, &item->data.as_dir.list) {
     ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
 
-    if (item->mode == MS_MODE_DIR) {
-      ms_printf("d--- %s", item->name);
-    } else {
-      ms_printf("f%c%c%c %s", item->data.as_file.run ? 'x' : '-',
-                item->data.as_file.read ? 'r' : '-',
-                item->data.as_file.write ? 'w' : '-', item->name);
+    switch (item->mode) {
+      case MS_MODE_DIR:
+        ms_printf("d---   %-15s", item->name);
+        break;
+      case MS_MODE_FILE: {
+        if (item->data.as_file.data) {
+          ms_printf(
+              "f%c%c%c   %-15s size %d", item->data.as_file.run ? 'x' : '-',
+              item->data.as_file.data ? 'r' : '-',
+              item->data.as_file.data && item->data.as_file.writeable ? 'w'
+                                                                      : '-',
+              item->name, item->data.as_file.size);
+          break;
+        } else {
+          ms_printf("f%c--   %-15s", item->data.as_file.run ? 'x' : '-',
+                    item->name, item->data.as_file.size);
+          break;
+        }
+      }
+      case MS_MODE_DEV:
+        ms_printf("c-%c%c   %-15s", item->data.as_device.read ? 'r' : '-',
+                  item->data.as_device.read ? 'w' : '-', item->name);
+        break;
     }
 
     ms_enter();
@@ -237,7 +262,7 @@ static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
   MS_UNUSED(item);
 
   if (argc == 1) {
-    ms.ctrl.cur_dir = &ms.sys_file.root_dir;
+    ms.ctrl.cur_dir = &ms.sys_file.user_home_dir;
     return 0;
   }
 
@@ -267,24 +292,53 @@ static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
 
   ms_item_t* item = path_to_file(argv[1]);
 
-  if (item) {
-    if (!item->data.as_file.read) {
-      err_file_read();
-      return -1;
-    }
-    int count = MS_CAT_BUFF_SIZE;
-    while (count == MS_CAT_BUFF_SIZE) {
-      count = item->data.as_file.read(item, ms.buff.cat_buff, MS_CAT_BUFF_SIZE);
-      if (count > 0) {
-        ms.write(ms.buff.cat_buff, count);
-      }
-    }
-    ms_enter();
-
-    return 0;
+  if (!item) {
+    return -1;
   }
 
-  return -1;
+  switch (item->mode) {
+    case MS_MODE_FILE: {
+      if (!item->data.as_file.data) {
+        err_file_read();
+        return -1;
+      }
+
+      size_t count = strnlen(item->data.as_file.data, item->data.as_file.size);
+
+      ms.write(item->data.as_file.data, count);
+
+      ms_enter();
+      break;
+    }
+
+    case MS_MODE_DEV:
+      if (!item->data.as_device.read) {
+        err_file_read();
+        return -1;
+      }
+
+      int count = 0;
+
+      while (1) {
+        count =
+            item->data.as_device.read(item, ms.buff.cat_buff, MS_CAT_BUFF_SIZE);
+
+        if (count <= 0) {
+          return -1;
+        }
+
+        ms.write(ms.buff.cat_buff, count);
+
+        if (count != MS_CAT_BUFF_SIZE) {
+          break;
+        }
+      }
+      break;
+    default:
+      return -1;
+  }
+
+  return 0;
 }
 
 static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
@@ -295,21 +349,53 @@ static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
     ms_enter();
     return 0;
   } else if (argc == 4) {
-    ms_item_t* item = path_to_file(argv[3]);
-
-    if (item) {
-      if (!item->data.as_file.write) {
-        err_file_write();
-        return -1;
-      }
-
-      item->data.as_file.write(item, argv[1],
-                               strnlen(argv[1], MS_MAX_CMD_LENGTH));
-      ms_enter();
-      return 0;
+    if (strcmp(argv[2], ">") != 0) {
+      err_arg_num();
+      return -1;
     }
 
-    return -1;
+    ms_item_t* item = path_to_file(argv[3]);
+
+    if (!item) {
+      return -1;
+    }
+
+    switch (item->mode) {
+      case MS_MODE_FILE: {
+        if ((!item->data.as_file.data) || (!item->data.as_file.writeable)) {
+          err_file_write();
+          return -1;
+        }
+
+        size_t count = strnlen(argv[1], MS_MAX_CMD_LENGTH) + 1;
+
+        if (count > item->data.as_file.size) {
+          count = item->data.as_file.size;
+        }
+
+        memcpy(item->data.as_file.data, argv[1], count);
+        break;
+      }
+
+      case MS_MODE_DEV: {
+        if (!item->data.as_device.write) {
+          err_file_write();
+          return -1;
+        }
+
+        size_t count = strnlen(argv[1], MS_MAX_CMD_LENGTH) + 1;
+
+        item->data.as_device.write(item, argv[1], count);
+
+        break;
+      }
+      default:
+        return -1;
+    }
+
+    ms_enter();
+
+    return 0;
   } else {
     err_arg_num();
     return -1;
@@ -330,7 +416,7 @@ static int tty_read_fun(ms_item_t* item, void* data, size_t count) {
   MS_UNUSED(item);
   MS_UNUSED(data);
   MS_UNUSED(count);
-
+  ms.write(ms.buff.read_buff, ms.ctrl.index + 1);
   return 0;
 }
 
@@ -339,30 +425,6 @@ static int tty_write_fun(ms_item_t* item, const void* data, size_t count) {
 
   ms.write(data, count);
 
-  return (int)count;
-}
-
-static int readme_read_fun(ms_item_t* item, void* data, size_t count) {
-  MS_UNUSED(item);
-
-  size_t num = strnlen(ms.buff.readme_buff, sizeof(ms.buff.readme_buff));
-
-  if (count < num) {
-    num = count;
-  }
-  memcpy(data, ms.buff.readme_buff, num);
-
-  return (int)num;
-}
-
-static int readme_write_fun(ms_item_t* item, const void* data, size_t count) {
-  MS_UNUSED(item);
-  if (count >= sizeof(ms.buff.readme_buff)) {
-    count = sizeof(ms.buff.readme_buff) - 1;
-    ms.buff.readme_buff[sizeof(ms.buff.readme_buff) - 1] = '\0';
-  }
-  memset(ms.buff.readme_buff, 0, sizeof(ms.buff.readme_buff));
-  memcpy(ms.buff.readme_buff, data, count);
   return (int)count;
 }
 
@@ -380,8 +442,20 @@ void ms_printf(const char* format, ...) {
   (void)vsnprintf(ms.buff.write_buff, sizeof(ms.buff.write_buff), format,
                   v_arg_list);
   va_end(v_arg_list);
-
   ms.write(ms.buff.write_buff, strlen(ms.buff.write_buff));
+}
+
+void ms_printf_insert(const char* format, ...) {
+  va_list v_arg_list;
+  va_start(v_arg_list, format);
+  (void)vsnprintf(ms.buff.write_buff, sizeof(ms.buff.write_buff), format,
+                  v_arg_list);
+  va_end(v_arg_list);
+
+  ms.write(CLEAR_LINE, sizeof(CLEAR_LINE));
+  ms.write(ms.buff.write_buff, strlen(ms.buff.write_buff));
+  ms_show_head();
+  ms_printf("%s", ms.buff.read_buff);
 }
 
 void ms_dir_init(ms_item_t* dir, const char* name) {
@@ -391,12 +465,21 @@ void ms_dir_init(ms_item_t* dir, const char* name) {
 }
 
 void ms_file_init(ms_item_t* file, const char* name, ms_cmd_fun_t run_fun,
-                  ms_write_fun_t write_fun, ms_read_fun_t read_fun) {
+                  void* data, size_t size, bool writeable) {
   file->mode = MS_MODE_FILE;
   file->name = name;
+  file->data.as_file.data = data;
+  file->data.as_file.size = size;
+  file->data.as_file.writeable = writeable;
   file->data.as_file.run = run_fun;
-  file->data.as_file.read = read_fun;
-  file->data.as_file.write = write_fun;
+}
+
+void ms_dev_init(ms_item_t* file, const char* name, ms_write_fun_t write_fun,
+                 ms_read_fun_t read_fun) {
+  file->mode = MS_MODE_DEV;
+  file->name = name;
+  file->data.as_device.read = read_fun;
+  file->data.as_device.write = write_fun;
 }
 
 void ms_item_add(ms_item_t* item, ms_item_t* parent_dir) {
@@ -466,8 +549,13 @@ static void ms_prase_cmd(const char* cmd) {
 }
 
 void ms_show_head() {
-  ms_printf("%s%s@%s:%s$\e[00m ", MS_HEAD_COLOR, MS_USER_NAME, MS_OS_NAME,
-            ms.ctrl.cur_dir->name);
+  if (ms.ctrl.cur_dir == &ms.sys_file.user_home_dir) {
+    ms_printf("%s%s@%s:%s$\e[00m ", MS_HEAD_COLOR, MS_USER_NAME, MS_OS_NAME,
+              "~");
+  } else {
+    ms_printf("%s%s@%s:%s$\e[00m ", MS_HEAD_COLOR, MS_USER_NAME, MS_OS_NAME,
+              ms.ctrl.cur_dir->name);
+  }
 }
 
 static void ms_add_history() {
@@ -607,7 +695,7 @@ static void ms_delete() {
     ms.buff.read_buff[ms.ctrl.index] = '\0';
 
     if (ms.ctrl.offset) {
-      for (uint32_t i = 0; i < ms.ctrl.offset; i++) {
+      for (size_t i = 0; i < ms.ctrl.offset; i++) {
         ms.buff.read_buff[ms.ctrl.index + i] =
             ms.buff.read_buff[ms.ctrl.index + i + 1];
       }
@@ -621,7 +709,7 @@ static void ms_delete() {
 
 static void ms_display_char(char data) {
   if (ms.ctrl.index + ms.ctrl.offset < MS_MAX_CMD_LENGTH - 2) {
-    for (uint32_t i = ms.ctrl.offset; i > 0; i--) {
+    for (size_t i = ms.ctrl.offset; i > 0; i--) {
       ms.buff.read_buff[ms.ctrl.index + i] =
           ms.buff.read_buff[ms.ctrl.index + i - 1];
     }
@@ -705,7 +793,7 @@ static void ms_tab(char* cmd) {
 
   uint16_t counter = 0;
 
-  uint32_t name_len = strlen(name);
+  size_t name_len = strlen(name);
 
   ms_list_head_t* pos = NULL;
 
@@ -796,7 +884,7 @@ void ms_clear() {
   ms.write(CLEAR_ALL, sizeof(CLEAR_ALL));
 }
 
-void ms_init(int (*write_fun)(const char*, uint32_t)) {
+void ms_init(int (*write_fun)(const char*, size_t)) {
   ms.history.index = MS_MAX_HISTORY_NUM;
 
   ms.write = write_fun;
@@ -810,20 +898,24 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
   ms_dir_init(&ms.sys_file.bin_dir, "bin");
   ms_dir_init(&ms.sys_file.etc_dir, "etc");
   ms_dir_init(&ms.sys_file.dev_dir, "dev");
+  ms_dir_init(&ms.sys_file.home_dir, "home");
+  ms_dir_init(&ms.sys_file.user_home_dir, MS_USER_NAME);
 
-  ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.cd_cmd, "cd", cd_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.cat_cmd, "cat", cat_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.echo_cmd, "echo", echo_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.clear_cmd, "clear", clear_fun, NULL, NULL);
-  ms_file_init(&ms.sys_file.tty_dev, "tty", NULL, tty_write_fun, tty_read_fun);
-  ms_file_init(&ms.sys_file.readme_file, "README.txt", NULL, readme_write_fun,
-               readme_read_fun);
+  ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, 0, false);
+  ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, 0, false);
+  ms_file_init(&ms.sys_file.cd_cmd, "cd", cd_fun, NULL, 0, false);
+  ms_file_init(&ms.sys_file.cat_cmd, "cat", cat_fun, NULL, 0, false);
+  ms_file_init(&ms.sys_file.echo_cmd, "echo", echo_fun, NULL, 0, false);
+  ms_file_init(&ms.sys_file.clear_cmd, "clear", clear_fun, NULL, 0, false);
+  ms_dev_init(&ms.sys_file.tty_dev, "tty", tty_write_fun, tty_read_fun);
+  ms_file_init(&ms.sys_file.readme_file, "README.txt", NULL,
+               ms.buff.readme_buff, sizeof(ms.buff.readme_buff), true);
 
   ms_item_add(&ms.sys_file.bin_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.dev_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.etc_dir, &ms.sys_file.root_dir);
+  ms_item_add(&ms.sys_file.home_dir, &ms.sys_file.root_dir);
+  ms_item_add(&ms.sys_file.user_home_dir, &ms.sys_file.home_dir);
   ms_cmd_add(&ms.sys_file.pwd_cmd);
   ms_cmd_add(&ms.sys_file.ls_cmd);
   ms_cmd_add(&ms.sys_file.cd_cmd);
@@ -831,15 +923,15 @@ void ms_init(int (*write_fun)(const char*, uint32_t)) {
   ms_cmd_add(&ms.sys_file.echo_cmd);
   ms_cmd_add(&ms.sys_file.clear_cmd);
   ms_item_add(&ms.sys_file.tty_dev, &ms.sys_file.dev_dir);
-  ms_item_add(&ms.sys_file.readme_file, &ms.sys_file.root_dir);
+  ms_item_add(&ms.sys_file.readme_file, &ms.sys_file.user_home_dir);
 
-  ms.ctrl.cur_dir = &ms.sys_file.root_dir;
+  ms.ctrl.cur_dir = &ms.sys_file.user_home_dir;
 }
 
 void ms_start() {
   ms_clear();
   const char* index = INIT_MESSAGE;
-  for (uint32_t i = 0; i < sizeof(INIT_MESSAGE); i += 64) {
+  for (size_t i = 0; i < sizeof(INIT_MESSAGE); i += 64) {
     if (sizeof(INIT_MESSAGE) - i > 64) {
       ms.write(index, 64);
       index += 64;
@@ -866,9 +958,13 @@ ms_item_t* ms_get_dev_dir() { return &ms.sys_file.dev_dir; }
 
 ms_item_t* ms_get_bin_dir() { return &ms.sys_file.bin_dir; }
 
+ms_item_t* ms_get_home_dir() { return &ms.sys_file.home_dir; }
+
+ms_item_t* ms_get_userhome_dir() { return &ms.sys_file.user_home_dir; }
+
 ms_status_t ms_path_to_dir(const char* raw_path, ms_item_t** ans) {
   strncpy(ms.buff.path_prase_buff, raw_path, MS_MAX_CMD_LENGTH);
-  uint32_t dir_name_len = strlen(ms.buff.path_prase_buff);
+  size_t dir_name_len = strlen(ms.buff.path_prase_buff);
   ms_item_t* target = ms.ctrl.cur_dir;
   char* path = ms.buff.path_prase_buff;
 
@@ -890,9 +986,9 @@ ms_status_t ms_path_to_dir(const char* raw_path, ms_item_t** ans) {
     dir_name_len--;
   }
 
-  uint32_t index = 0;
+  size_t index = 0;
 
-  for (uint32_t i = 0; i < dir_name_len + 1; i++) {
+  for (size_t i = 0; i < dir_name_len + 1; i++) {
     if (path[i] != '/' && path[i] != '\0') {
       continue;
     }
@@ -964,7 +1060,7 @@ ms_status_t ms_path_to_file(const char* raw_path, ms_item_t** ans) {
 
   ms_list_for_each(pos, &search_dir->data.as_dir.list) {
     ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
-    if (item->mode == MS_MODE_FILE && strcmp(cmd_name, item->name) == 0) {
+    if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
       *ans = item;
       return MS_OK;
     }
@@ -973,7 +1069,7 @@ ms_status_t ms_path_to_file(const char* raw_path, ms_item_t** ans) {
   if (search_bin) {
     ms_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
       ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
-      if (item->mode == MS_MODE_FILE && strcmp(cmd_name, item->name) == 0) {
+      if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
         *ans = item;
         return MS_OK;
       }

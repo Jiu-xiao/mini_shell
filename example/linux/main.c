@@ -3,7 +3,7 @@
 
 #include "ms.h"
 
-int show_fun(const char *data, uint32_t len) {
+int show_fun(const char *data, size_t len) {
   while (len--) {
     putchar(*data++);
   }
