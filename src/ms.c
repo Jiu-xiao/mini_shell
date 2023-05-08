@@ -835,10 +835,10 @@ static void ms_tab(char* cmd) {
     ms_show_head();
     ms_printf("%s", ms.buff.read_buff);
   } else {
-    ms_reset();
     ms_enter();
     ms_show_head();
-    for (uint16_t i = 0; i < ms.ctrl.tab_same_len; i++) {
+    ms.write(ms.buff.read_buff, ms.ctrl.index);
+    for (uint16_t i = name_len; i < ms.ctrl.tab_same_len; i++) {
       ms_input(ms.ctrl.tab_tmp->name[i]);
     }
   }
