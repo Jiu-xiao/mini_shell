@@ -248,7 +248,7 @@ static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
       }
       case MS_MODE_DEV:
         ms_printf("c-%c%c   %-15s", item->data.as_device.read ? 'r' : '-',
-                  item->data.as_device.read ? 'w' : '-', item->name);
+                  item->data.as_device.write ? 'w' : '-', item->name);
         break;
     }
 
@@ -392,8 +392,6 @@ static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
       default:
         return -1;
     }
-
-    ms_enter();
 
     return 0;
   } else {
