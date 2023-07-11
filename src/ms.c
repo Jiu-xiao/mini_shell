@@ -1,18 +1,16 @@
 #include "ms.h"
 
-#define SHELL_VERSION "1.0.4"
+#define SHELL_VERSION "1.0.6"
 
 static const char INIT_MESSAGE[] =
-    " __  __ _       _    _____ _          _ _ \r\n"
-    "|  \\/  (_)     (_)  / ____| |        | | |\r\n"
-    "| \\  / |_ _ __  _  | (___ | |__   ___| | |\r\n"
-    "| |\\/| | | '_ \\| |  \\___ \\| '_ \\ / _ \\ | |\r\n"
-    "| |  | | | | | | |  ____) | | | |  __/ | |\r\n"
-    "|_|  |_|_|_| |_|_| |_____/|_| |_|\\___|_|_|\r\n"
+    " __  __ _      _ ___ _        _ _ \r\n"
+    "|  \\/  (_)_ _ (_) __| |_  ___| | |\r\n"
+    "| |\\/| | | ' \\| \\__ \\ ' \\/ -_) | |\r\n"
+    "|_|  |_|_|_||_|_|___/_||_\\___|_|_|\r\n"
     "Build:"__DATE__
     " "__TIME__
     "\r\n"
-    "Mini shell version:" SHELL_VERSION "\r\n";
+    "version:" SHELL_VERSION "\r\n";
 
 static const char CLEAR_ALL[] = "\033[2J\033[1H";
 static const char CLEAR_LINE[] = "\033[2K\r";

@@ -7,7 +7,7 @@
 #include <string.h>
 
 typedef struct _ms_list_head {
-  struct _ms_list_head *next, *prev;
+  struct _ms_list_head *next;
 } ms_list_head_t;
 
 #if MS_DEBUG
@@ -59,11 +59,7 @@ void ms_list_init_head(ms_list_head_t* list);
 
 void ms_list_add(ms_list_head_t* new_data, ms_list_head_t* head);
 
-void ms_list_add_tail(ms_list_head_t* new_data, ms_list_head_t* head);
-
 void ms_list_del(ms_list_head_t* entry);
-
-void ms_list_del_init(ms_list_head_t* entry);
 
 void ms_list_replace(ms_list_head_t* old, ms_list_head_t* new_data);
 
