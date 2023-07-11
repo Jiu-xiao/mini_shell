@@ -1,11 +1,9 @@
 #include "ms_list.h"
 
-void ms_list_init_head(ms_list_head_t* list) {
-  list->next = list;
-}
+void ms_list_init_head(ms_list_head_t* list) { list->next = list; }
 
 static void __list_add(ms_list_head_t* new_data, ms_list_head_t* prev,
-                ms_list_head_t* next) {
+                       ms_list_head_t* next) {
   new_data->next = next;
   prev->next = new_data;
 }
@@ -18,16 +16,15 @@ static void __list_del(ms_list_head_t* prev, ms_list_head_t* next) {
   prev->next = next;
 }
 
-ms_list_head_t* __list_get_prev(ms_list_head_t* entry){
+static ms_list_head_t* __list_get_prev(ms_list_head_t* entry) {
   ms_list_head_t* prev = entry;
-  while(prev->next != entry) {
+  while (prev->next != entry) {
     prev = prev->next;
   }
   return prev;
 }
 
 void ms_list_del(ms_list_head_t* entry) {
-
   __list_del(__list_get_prev(entry), entry->next);
 }
 

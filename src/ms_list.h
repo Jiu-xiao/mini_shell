@@ -7,7 +7,7 @@
 #include <string.h>
 
 typedef struct _ms_list_head {
-  struct _ms_list_head *next;
+  struct _ms_list_head* next;
 } ms_list_head_t;
 
 #if MS_DEBUG
