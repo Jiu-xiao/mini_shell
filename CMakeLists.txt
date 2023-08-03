@@ -12,3 +12,20 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+
+if(TARGET OneMessage)
+  target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE OneMessage)
+  target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC $<TARGET_PROPERTY:OneMessage,INTERFACE_INCLUDE_DIRECTORIES>)
+else()
+  target_sources(${PROJECT_NAME}
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/om_core/om_list.c"
+  )
+  target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/om_core
+  )
+endif()

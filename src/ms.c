@@ -20,6 +20,8 @@ static const char KEY_LEFT[] = "\033[D";
 static const char KEY_SAVE[] = "\033[s";
 static const char KEY_LOAD[] = "\033[u";
 
+#define MS_HISTORY_NULL (0X100)
+
 ms_t ms;
 
 static void err_arg_num() {
@@ -117,12 +119,12 @@ static ms_item_t* path_to_dir(char* path) {
       continue;
     }
 
-    ms_list_head_t* pos = NULL;
+    om_list_head_t* pos = NULL;
 
     bool found = false;
 
-    ms_list_for_each(pos, &target->data.as_dir.list) {
-      ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+    om_list_for_each(pos, &target->data.as_dir.list) {
+      ms_item_t* item = om_list_entry(pos, ms_item_t, self);
 
       if (item->mode == MS_MODE_DIR && strcmp(path + index, item->name) == 0) {
         target = item;
@@ -159,18 +161,18 @@ static ms_item_t* path_to_file(char* raw) {
     return NULL;
   }
 
-  ms_list_head_t* pos = NULL;
+  om_list_head_t* pos = NULL;
 
-  ms_list_for_each(pos, &search_dir->data.as_dir.list) {
-    ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+  om_list_for_each(pos, &search_dir->data.as_dir.list) {
+    ms_item_t* item = om_list_entry(pos, ms_item_t, self);
     if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
       return item;
     }
   }
 
   if (search_bin) {
-    ms_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
-      ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+    om_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
+      ms_item_t* item = om_list_entry(pos, ms_item_t, self);
       if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
         return item;
       }
@@ -194,9 +196,9 @@ static void pwd_fun_fn(ms_item_t* item) {
 }
 
 static int pwd_fun(ms_item_t* item, int argc, char* argv[]) {
-  MS_UNUSED(argc);
-  MS_UNUSED(argv);
-  MS_UNUSED(item);
+  OM_UNUSED(argc);
+  OM_UNUSED(argv);
+  OM_UNUSED(item);
 
   if (ms.ctrl.cur_dir == &ms.sys_file.root_dir) {
     ms.write("/", 1);
@@ -208,7 +210,7 @@ static int pwd_fun(ms_item_t* item, int argc, char* argv[]) {
 }
 
 static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
-  MS_UNUSED(_item);
+  OM_UNUSED(_item);
 
   ms_item_t* item = NULL;
   if (argc == 1) {
@@ -221,9 +223,9 @@ static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
     }
   }
 
-  ms_list_head_t* pos = NULL;
-  ms_list_for_each(pos, &item->data.as_dir.list) {
-    ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+  om_list_head_t* pos = NULL;
+  om_list_for_each(pos, &item->data.as_dir.list) {
+    ms_item_t* item = om_list_entry(pos, ms_item_t, self);
 
     switch (item->mode) {
       case MS_MODE_DIR:
@@ -257,7 +259,7 @@ static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
 }
 
 static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
-  MS_UNUSED(item);
+  OM_UNUSED(item);
 
   if (argc == 1) {
     ms.ctrl.cur_dir = &ms.sys_file.user_home_dir;
@@ -281,7 +283,7 @@ static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
 }
 
 static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
-  MS_UNUSED(_item);
+  OM_UNUSED(_item);
 
   if (argc != 2) {
     err_arg_num();
@@ -340,7 +342,7 @@ static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
 }
 
 static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
-  MS_UNUSED(item);
+  OM_UNUSED(item);
 
   if (argc == 2) {
     ms_printf("%s", argv[1]);
@@ -399,9 +401,9 @@ static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
 }
 
 static int clear_fun(ms_item_t* item, int argc, char* argv[]) {
-  MS_UNUSED(argc);
-  MS_UNUSED(argv);
-  MS_UNUSED(item);
+  OM_UNUSED(argc);
+  OM_UNUSED(argv);
+  OM_UNUSED(item);
 
   ms_clear();
 
@@ -409,15 +411,15 @@ static int clear_fun(ms_item_t* item, int argc, char* argv[]) {
 }
 
 static int tty_read_fun(ms_item_t* item, void* data, size_t count) {
-  MS_UNUSED(item);
-  MS_UNUSED(data);
-  MS_UNUSED(count);
+  OM_UNUSED(item);
+  OM_UNUSED(data);
+  OM_UNUSED(count);
   ms.write(ms.buff.read_buff, ms.ctrl.index + 1);
   return 0;
 }
 
 static int tty_write_fun(ms_item_t* item, const void* data, size_t count) {
-  MS_UNUSED(item);
+  OM_UNUSED(item);
 
   ms.write(data, count);
 
@@ -457,7 +459,7 @@ void ms_printf_insert(const char* format, ...) {
 void ms_dir_init(ms_item_t* dir, const char* name) {
   dir->mode = MS_MODE_DIR;
   dir->name = name;
-  ms_list_init_head(&dir->data.as_dir.list);
+  _OM_INIT_LIST_HEAD(&dir->data.as_dir.list);
 }
 
 void ms_file_init(ms_item_t* file, const char* name, ms_cmd_fun_t run_fun,
@@ -479,7 +481,7 @@ void ms_dev_init(ms_item_t* file, const char* name, ms_write_fun_t write_fun,
 }
 
 void ms_item_add(ms_item_t* item, ms_item_t* parent_dir) {
-  ms_list_add(&item->self, &parent_dir->data.as_dir.list);
+  om_list_add(&item->self, &parent_dir->data.as_dir.list);
   item->father = parent_dir;
 }
 
@@ -555,7 +557,7 @@ void ms_show_head() {
 }
 
 static void ms_add_history() {
-  ms.history.index = MS_MAX_HISTORY_NUM;
+  ms.history.index = MS_HISTORY_NULL;
   strcpy(ms.buff.history_buff[ms.history.last++ % MS_MAX_HISTORY_NUM],
          ms.buff.read_buff);
   ms.history.last %= MS_MAX_HISTORY_NUM;
@@ -575,43 +577,43 @@ static void ms_apply_history(uint16_t num) {
 }
 
 static uint16_t ms_get_next_history() {
-  if (ms.history.index == MS_MAX_HISTORY_NUM) {
+  if (ms.history.index == MS_HISTORY_NULL) {
     if (ms.history.num > 0) {
       return (ms.history.last + MS_MAX_HISTORY_NUM - 1) % MS_MAX_HISTORY_NUM;
     } else {
-      return MS_MAX_HISTORY_NUM;
+      return MS_HISTORY_NULL;
     }
   } else if (ms.history.num == MS_MAX_HISTORY_NUM) {
     if (ms.history.index != ms.history.last) {
       return (ms.history.index + MS_MAX_HISTORY_NUM - 1) % MS_MAX_HISTORY_NUM;
     } else {
-      return MS_MAX_HISTORY_NUM;
+      return MS_HISTORY_NULL;
     }
   } else {
     if (ms.history.index != 0) {
       return ms.history.index - 1;
     } else {
-      return MS_MAX_HISTORY_NUM;
+      return MS_HISTORY_NULL;
     }
   }
 }
 
 static uint16_t ms_get_prev_history() {
   if (ms.history.index == MS_MAX_HISTORY_NUM) {
-    return MS_MAX_HISTORY_NUM;
+    return MS_HISTORY_NULL;
 
   } else if (ms.history.num == MS_MAX_HISTORY_NUM) {
     if (ms.history.index !=
         ((ms.history.last + MS_MAX_HISTORY_NUM - 1) % MS_MAX_HISTORY_NUM)) {
       return (ms.history.index + 1) % MS_MAX_HISTORY_NUM;
     } else {
-      return MS_MAX_HISTORY_NUM;
+      return MS_HISTORY_NULL;
     }
   } else {
     if (ms.history.index != ms.history.last - 1) {
       return ms.history.index + 1;
     } else {
-      return MS_MAX_HISTORY_NUM;
+      return MS_HISTORY_NULL;
     }
   }
 }
@@ -619,7 +621,7 @@ static uint16_t ms_get_prev_history() {
 static void ms_key_up() {
   uint16_t history = ms_get_next_history();
 
-  if (history != MS_MAX_HISTORY_NUM) {
+  if (history != MS_HISTORY_NULL) {
     ms_apply_history(history);
   }
 }
@@ -627,7 +629,7 @@ static void ms_key_up() {
 static void ms_key_down() {
   uint16_t history = ms_get_prev_history();
 
-  if (history != MS_MAX_HISTORY_NUM) {
+  if (history != MS_HISTORY_NULL) {
     ms_apply_history(history);
   } else {
     ms_clear_line();
@@ -791,10 +793,10 @@ static void ms_tab(char* cmd) {
 
   size_t name_len = strlen(name);
 
-  ms_list_head_t* pos = NULL;
+  om_list_head_t* pos = NULL;
 
-  ms_list_for_each(pos, &search_dir->data.as_dir.list) {
-    ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+  om_list_for_each(pos, &search_dir->data.as_dir.list) {
+    ms_item_t* item = om_list_entry(pos, ms_item_t, self);
     if (strncmp(name, item->name, name_len) == 0) {
       counter++;
       ms_tab_fn(item, counter);
@@ -802,8 +804,8 @@ static void ms_tab(char* cmd) {
   }
 
   if (search_bin) {
-    ms_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
-      ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+    om_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
+      ms_item_t* item = om_list_entry(pos, ms_item_t, self);
       if (strncmp(name, item->name, name_len) == 0) {
         counter++;
         ms_tab_fn(item, counter);
@@ -881,14 +883,12 @@ void ms_clear() {
 }
 
 void ms_init(int (*write_fun)(const char*, size_t)) {
-  ms.history.index = MS_MAX_HISTORY_NUM;
-
   ms.write = write_fun;
 
   strcpy(ms.buff.readme_buff,
          "Mini Shell by jiu-xiao. https://github.com/Jiu-xiao/mini_shell");
 
-  ms.history.index = MS_MAX_HISTORY_NUM;
+  ms.history.index = MS_HISTORY_NULL;
 
   ms_dir_init(&ms.sys_file.root_dir, "/");
   ms_dir_init(&ms.sys_file.bin_dir, "bin");
@@ -941,9 +941,9 @@ void ms_start() {
   if (sizeof(MS_INIT_COMMAND) > 1) {
     strncpy(ms.buff.read_buff, MS_INIT_COMMAND, sizeof(MS_INIT_COMMAND));
     ms.ctrl.index = sizeof(MS_INIT_COMMAND);
+    ms_input('\n');
   }
-
-  ms_input('\n');
+  ms_show_head();
 }
 
 ms_item_t* ms_get_root_dir() { return &ms.sys_file.root_dir; }
@@ -1006,12 +1006,12 @@ ms_status_t ms_path_to_dir(const char* raw_path, ms_item_t** ans) {
       continue;
     }
 
-    ms_list_head_t* pos = NULL;
+    om_list_head_t* pos = NULL;
 
     bool found = false;
 
-    ms_list_for_each(pos, &target->data.as_dir.list) {
-      ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+    om_list_for_each(pos, &target->data.as_dir.list) {
+      ms_item_t* item = om_list_entry(pos, ms_item_t, self);
 
       if (item->mode == MS_MODE_DIR && strcmp(path + index, item->name) == 0) {
         target = item;
@@ -1052,10 +1052,10 @@ ms_status_t ms_path_to_file(const char* raw_path, ms_item_t** ans) {
     return MS_ERROR_NULL;
   }
 
-  ms_list_head_t* pos = NULL;
+  om_list_head_t* pos = NULL;
 
-  ms_list_for_each(pos, &search_dir->data.as_dir.list) {
-    ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+  om_list_for_each(pos, &search_dir->data.as_dir.list) {
+    ms_item_t* item = om_list_entry(pos, ms_item_t, self);
     if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
       *ans = item;
       return MS_OK;
@@ -1063,8 +1063,8 @@ ms_status_t ms_path_to_file(const char* raw_path, ms_item_t** ans) {
   }
 
   if (search_bin) {
-    ms_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
-      ms_item_t* item = ms_list_entry(pos, ms_item_t, self);
+    om_list_for_each(pos, &ms.sys_file.bin_dir.data.as_dir.list) {
+      ms_item_t* item = om_list_entry(pos, ms_item_t, self);
       if (item->mode != MS_MODE_DIR && strcmp(cmd_name, item->name) == 0) {
         *ans = item;
         return MS_OK;

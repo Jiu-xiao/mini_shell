@@ -13,7 +13,7 @@ extern "C" {
 #include <string.h>
 
 #include "ms_config.h"
-#include "ms_list.h"
+#include "om_list.h"
 
 #define MS_CSI(code) "\033[" #code "m" /**< ANSI CSI指令 */
 
@@ -57,7 +57,7 @@ typedef struct ms_item_struct {
   struct ms_item_struct* father;
   union {
     struct {
-      ms_list_head_t list;
+      om_list_head_t list;
     } as_dir;
 
     struct {
@@ -72,7 +72,7 @@ typedef struct ms_item_struct {
       int (*write)(struct ms_item_struct* self, const void* buff, size_t size);
     } as_device;
   } data;
-  ms_list_head_t self;
+  om_list_head_t self;
 
   ms_mode_t mode;
 } ms_item_t;
