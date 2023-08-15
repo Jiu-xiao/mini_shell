@@ -92,8 +92,12 @@ typedef struct {
     char path_prase_buff[MS_MAX_CMD_LENGTH];
     char* arg_map[MS_MAX_ARG_NUM];
     char history_buff[MS_MAX_HISTORY_NUM][MS_MAX_CMD_LENGTH];
+#if MS_FILE_README
     char readme_buff[65];
+#endif
+#if MS_CMD_CAT
     char cat_buff[MS_CAT_BUFF_SIZE];
+#endif
   } buff;
 
   struct {
@@ -109,14 +113,30 @@ typedef struct {
     ms_item_t etc_dir;
     ms_item_t home_dir;
     ms_item_t user_home_dir;
+#if MS_FILE_TTY
     ms_item_t tty_dev;
+#endif
+#if MS_FILE_README
     ms_item_t readme_file;
+#endif
+#if MS_CMD_PWD
     ms_item_t pwd_cmd;
+#endif
+#if MS_CMD_LS
     ms_item_t ls_cmd;
+#endif
+#if MS_CMD_CD
     ms_item_t cd_cmd;
+#endif
+#if MS_CMD_CAT
     ms_item_t cat_cmd;
+#endif
+#if MS_CMD_ECHO
     ms_item_t echo_cmd;
+#endif
+#if MS_CMD_CLEAR
     ms_item_t clear_cmd;
+#endif
   } sys_file;
 
   struct {

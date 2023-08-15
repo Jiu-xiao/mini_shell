@@ -184,6 +184,7 @@ static ms_item_t* path_to_file(char* raw) {
   return NULL;
 }
 
+#if MS_CMD_PWD
 static void pwd_fun_fn(ms_item_t* item) {
   if (item == &ms.sys_file.root_dir) {
     return;
@@ -208,7 +209,9 @@ static int pwd_fun(ms_item_t* item, int argc, char* argv[]) {
   ms_enter();
   return 0;
 }
+#endif
 
+#if MS_CMD_LS
 static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
   OM_UNUSED(_item);
 
@@ -257,7 +260,9 @@ static int ls_fun(ms_item_t* _item, int argc, char* argv[]) {
 
   return 0;
 }
+#endif
 
+#if MS_CMD_LS
 static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
   OM_UNUSED(item);
 
@@ -281,7 +286,9 @@ static int cd_fun(ms_item_t* item, int argc, char* argv[]) {
     return -1;
   }
 }
+#endif
 
+#if MS_CMD_CAT
 static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
   OM_UNUSED(_item);
 
@@ -340,7 +347,9 @@ static int cat_fun(ms_item_t* _item, int argc, char* argv[]) {
 
   return 0;
 }
+#endif
 
+#if MS_CMD_ECHO
 static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
   OM_UNUSED(item);
 
@@ -399,7 +408,9 @@ static int echo_fun(ms_item_t* item, int argc, char* argv[]) {
     return -1;
   }
 }
+#endif
 
+#if MS_CMD_CLEAR
 static int clear_fun(ms_item_t* item, int argc, char* argv[]) {
   OM_UNUSED(argc);
   OM_UNUSED(argv);
@@ -409,7 +420,9 @@ static int clear_fun(ms_item_t* item, int argc, char* argv[]) {
 
   return 0;
 }
+#endif
 
+#if MS_FILE_TTY
 static int tty_read_fun(ms_item_t* item, void* data, size_t count) {
   OM_UNUSED(item);
   OM_UNUSED(data);
@@ -425,6 +438,7 @@ static int tty_write_fun(ms_item_t* item, const void* data, size_t count) {
 
   return (int)count;
 }
+#endif
 
 void ms_enter() { ms.write("\r\n", sizeof("\r\n")); }
 
@@ -883,10 +897,11 @@ void ms_clear() {
 }
 
 void ms_init(int (*write_fun)(const char*, size_t)) {
-  ms.write = write_fun;
+  OM_UNUSED(err_arg_num);
+  OM_UNUSED(err_file_write);
+  OM_UNUSED(err_file_read);
 
-  strcpy(ms.buff.readme_buff,
-         "Mini Shell by jiu-xiao. https://github.com/Jiu-xiao/mini_shell");
+  ms.write = write_fun;
 
   ms.history.index = MS_HISTORY_NULL;
 
@@ -897,29 +912,47 @@ void ms_init(int (*write_fun)(const char*, size_t)) {
   ms_dir_init(&ms.sys_file.home_dir, "home");
   ms_dir_init(&ms.sys_file.user_home_dir, MS_USER_NAME);
 
-  ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, 0, false);
-  ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, 0, false);
-  ms_file_init(&ms.sys_file.cd_cmd, "cd", cd_fun, NULL, 0, false);
-  ms_file_init(&ms.sys_file.cat_cmd, "cat", cat_fun, NULL, 0, false);
-  ms_file_init(&ms.sys_file.echo_cmd, "echo", echo_fun, NULL, 0, false);
-  ms_file_init(&ms.sys_file.clear_cmd, "clear", clear_fun, NULL, 0, false);
-  ms_dev_init(&ms.sys_file.tty_dev, "tty", tty_write_fun, tty_read_fun);
-  ms_file_init(&ms.sys_file.readme_file, "README.txt", NULL,
-               ms.buff.readme_buff, sizeof(ms.buff.readme_buff), true);
-
   ms_item_add(&ms.sys_file.bin_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.dev_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.etc_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.home_dir, &ms.sys_file.root_dir);
   ms_item_add(&ms.sys_file.user_home_dir, &ms.sys_file.home_dir);
+#if MS_CMD_PWD
+  ms_file_init(&ms.sys_file.pwd_cmd, "pwd", pwd_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.pwd_cmd);
+#endif
+#if MS_CMD_LS
+  ms_file_init(&ms.sys_file.ls_cmd, "ls", ls_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.ls_cmd);
+#endif
+#if MS_CMD_CD
+  ms_file_init(&ms.sys_file.cd_cmd, "cd", cd_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.cd_cmd);
+
+#endif
+#if MS_CMD_CAT
+  ms_file_init(&ms.sys_file.cat_cmd, "cat", cat_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.cat_cmd);
+#endif
+#if MS_CMD_ECHO
+  ms_file_init(&ms.sys_file.echo_cmd, "echo", echo_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.echo_cmd);
+#endif
+#if MS_CMD_CLEAR
+  ms_file_init(&ms.sys_file.clear_cmd, "clear", clear_fun, NULL, 0, false);
   ms_cmd_add(&ms.sys_file.clear_cmd);
+#endif
+#if MS_FILE_TTY
+  ms_dev_init(&ms.sys_file.tty_dev, "tty", tty_write_fun, tty_read_fun);
   ms_item_add(&ms.sys_file.tty_dev, &ms.sys_file.dev_dir);
+#endif
+#if MS_FILE_README
+  ms_file_init(&ms.sys_file.readme_file, "README.txt", NULL,
+               ms.buff.readme_buff, sizeof(ms.buff.readme_buff), true);
+  strcpy(ms.buff.readme_buff,
+         "Mini Shell by jiu-xiao. https://github.com/Jiu-xiao/mini_shell");
   ms_item_add(&ms.sys_file.readme_file, &ms.sys_file.user_home_dir);
+#endif
 
   ms.ctrl.cur_dir = &ms.sys_file.user_home_dir;
 }
